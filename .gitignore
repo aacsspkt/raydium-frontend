@@ -42,3 +42,6 @@ tsconfig.tsbuildinfo
 
 # i
 i.json
+
+# yarn cache
+.yarn/
