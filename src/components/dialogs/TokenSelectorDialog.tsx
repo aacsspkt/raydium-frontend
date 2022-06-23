@@ -27,6 +27,7 @@ import useAsyncValue from '@/hooks/useAsyncValue'
 import useToggle from '@/hooks/useToggle'
 import { createSplToken } from '@/application/token/feature/useTokenListsLoader'
 import ListFast from '../ListFast'
+import { isMintEqual, isStringInsensitivelyEqual } from '@/functions/judgers/areEqual'
 
 export type TokenSelectorProps = {
   open: boolean
@@ -77,7 +78,7 @@ function TokenSelectorDialogContent({ open, close: closePanel, onSelectCoin }: T
                 .split(' ')
                 .every(
                   (keyWord) =>
-                    toPubString(token.mint).startsWith(keyWord) ||
+                    toPubString(token.id).startsWith(keyWord) ||
                     new RegExp(`^.*${keyWord.toLowerCase()}.*$`).test(token.symbol?.toLowerCase() ?? '')
                 )
             ),
@@ -86,10 +87,23 @@ function TokenSelectorDialogContent({ open, close: closePanel, onSelectCoin }: T
         : sortedTokens,
     [searchText, sortedTokens, balances]
   )
+  /** prior the symbol full matched coin token  */
   function firstFullMatched(tokens: SplToken[], searchText: string): SplToken[] {
     const fullMatched = tokens.filter((token) => token.symbol?.toLowerCase() === searchText.toLowerCase())
-    const fullMatchedMint = fullMatched.map((m) => toPubString(m.mint))
-    return [...fullMatched, ...tokens.filter(({ mint }) => !fullMatchedMint.includes(toPubString(mint)))]
+    return [
+      ...fullMatched,
+      ...tokens.filter(
+        (t) =>
+          !fullMatched.some(
+            (f) =>
+              isMintEqual(f.mint, t.mint) &&
+              isStringInsensitivelyEqual(
+                f.symbol,
+                t.symbol
+              ) /* check mint and symbol to avoid QuantumSOL(sol and wsol has same mint) */
+          )
+      )
+    ]
   }
 
   // flag for can start user add mode
